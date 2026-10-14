@@ -230,8 +230,9 @@ static inline u32 fl(s32 v)
 #define CL_DOWN  0x4000
 #define CL_RIGHT 0x8000
 
-/* GameCube pad -> Classic Controller buttons.  Z is ZL, Start is Plus, L + R + Start is HOME. */
-static __attribute__((noinline)) u32 gc_to_cc(u32 h)
+/* GameCube pad -> Classic Controller buttons.  Z is ZL, Start is Plus, L + R + Start is HOME, and the C-stick pushed
+ * down is Minus (the menus' Back button).  `l` is the second pad word: C-stick x in bits 31..24, y in 23..16. */
+static __attribute__((noinline)) u32 gc_to_cc(u32 h, u32 l)
 {
     u32 b = 0;
 
@@ -247,6 +248,7 @@ static __attribute__((noinline)) u32 gc_to_cc(u32 h)
     if (h & 0x00040000u) b |= CL_DOWN;
     if (h & 0x00020000u) b |= CL_RIGHT;
     if (h & 0x00010000u) b |= CL_LEFT;
+    if (((l >> 16) & 0xFF) < 64) b |= CL_MINUS;
     if ((b & (CL_L | CL_R | CL_PLUS)) == (CL_L | CL_R | CL_PLUS))
         b = (b & ~(CL_L | CL_R | CL_PLUS)) | CL_HOME;
     return b;
@@ -441,7 +443,7 @@ u32 kk_kpad(u32 count, u32 chan, u8 *buf)
     }
 
     if ((!count || (s32)R32F(buf, K_TYPE) == 0) && pad_in(chan, &h, &l)) {
-        u32 cc = gc_to_cc(h), g, w;
+        u32 cc = gc_to_cc(h, l), g, w;
         s32 lx = stick_gc(h >> 8), ly = stick_gc(h);
 
         w = cc_to_wii(cc, &g);

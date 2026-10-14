@@ -47,6 +47,7 @@ game as exactly that, so every action the game asks for has a button.
 | R | Thrust down (butt bounce) |
 | D-pad | Wii Remote D-pad |
 | Start | + |
+| C-stick down | − (Back in the menus) |
 | L + R + Start | HOME |
 
 ### Classic Controller
