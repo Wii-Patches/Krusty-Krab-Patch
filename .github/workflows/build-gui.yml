@@ -99,7 +99,7 @@ jobs:
             $BINS --distpath pyinst_dist tools/gui.py
           cp wit-gpl-2.0.txt "pyinst_dist/Krusty-Krab-Patcher.app/Contents/Resources/wit-gpl-2.0.txt"
           cd pyinst_dist
-          zip -qr "../Krusty-Krab-Patch-${{ matrix.target }}.zip" Krusty-Krab-Patcher.app
+          zip -qr "../Krusty-Krab-ISO-Patcher-${{ matrix.target }}.zip" Krusty-Krab-Patcher.app
 
       - name: Build app (Linux)
         if: matrix.target == 'linux-x86_64'
@@ -112,7 +112,7 @@ jobs:
             $BINS --distpath pyinst_dist tools/gui.py
           cp wit-gpl-2.0.txt pyinst_dist/Krusty-Krab-Patcher/
           cd pyinst_dist
-          tar -czf "../Krusty-Krab-Patch-${{ matrix.target }}.tar.gz" Krusty-Krab-Patcher
+          tar -czf "../Krusty-Krab-ISO-Patcher-${{ matrix.target }}.tar.gz" Krusty-Krab-Patcher
 
       - name: Build app (Windows)
         if: matrix.target == 'windows-x86_64'
@@ -127,19 +127,19 @@ jobs:
             $BINS --distpath pyinst_dist tools/gui.py
           cp wit-gpl-2.0.txt pyinst_dist/Krusty-Krab-Patcher/
           cd pyinst_dist
-          7z a "../Krusty-Krab-Patch-${{ matrix.target }}.zip" Krusty-Krab-Patcher \
-            || powershell -Command "Compress-Archive -Path Krusty-Krab-Patcher -DestinationPath ../Krusty-Krab-Patch-${{ matrix.target }}.zip"
+          7z a "../Krusty-Krab-ISO-Patcher-${{ matrix.target }}.zip" Krusty-Krab-Patcher \
+            || powershell -Command "Compress-Archive -Path Krusty-Krab-Patcher -DestinationPath ../Krusty-Krab-ISO-Patcher-${{ matrix.target }}.zip"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Krusty-Krab-Patch-${{ matrix.target }}
-          path: Krusty-Krab-Patch-${{ matrix.target }}.*
+          name: Krusty-Krab-ISO-Patcher-${{ matrix.target }}
+          path: Krusty-Krab-ISO-Patcher-${{ matrix.target }}.*
 
       - name: Attach to release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: Krusty-Krab-Patch-${{ matrix.target }}.*
+          files: Krusty-Krab-ISO-Patcher-${{ matrix.target }}.*
 
   patch-files:
     needs: check
