@@ -60,13 +60,28 @@ _entry:
     addi    4, 22, -1
     mr      5, 20
     bl      kk_kpad
+    stw     3, 0x10(1)          /* the hook's result replaces r3 */
 #elif defined(HOOK_PROBE)
     /* site: the join after WPADProbe.  r3 = result, r26 = channel, the type sits at r1 + 8 of the hooked function */
     mr      4, 26
     addi    5, 1, 0x78
     bl      kk_probe
-#endif
     stw     3, 0x10(1)          /* the hook's result replaces r3 */
+#elif defined(HOOK_DRIVE)
+    /* site: right after CMainCharacterStateDrive::Input's GetAccPosition call.  The samples sit at r1 + 16 of the
+     * hooked function, r31 is the player's pad record (+84 = controller index) */
+    addi    3, 1, 0x70 + 16
+    lwz     4, 84(31)
+    li      5, 0
+    bl      kk_tilt
+#elif defined(HOOK_FLIGHT)
+    /* site: right after CPropMainCharacter::FlightInput's GetAccPosition call.  The samples sit at r1 + 56, r29 is
+     * the CRevolutionController */
+    addi    3, 1, 0x70 + 56
+    mr      4, 29
+    li      5, 1
+    bl      kk_tilt
+#endif
     RESTORE_ALL
     .long   0xD15B1ACE          /* the displaced instruction */
     nop                         /* becomes the branch back */

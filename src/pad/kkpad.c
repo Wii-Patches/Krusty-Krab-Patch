@@ -49,6 +49,8 @@ struct ch {
     u32 shake_t;        /* samples left in a running Nunchuk shake */
     u32 bump_t;         /* samples left in a running downward thrust (butt bounce) */
     u32 phase;          /* running sample counter, for the oscillating part of a gesture */
+    s32 steer_x;        /* the stick (or D-pad) as Wii Remote tilt, 1/1024: read back by the driving/flight hooks */
+    s32 steer_y;
 };
 
 struct st {
@@ -193,6 +195,15 @@ static inline u32 fl(s32 v)
 }
 
 #define ONE 1024
+#ifndef DRIVE_SIGN
+#define DRIVE_SIGN 1
+#endif
+#ifndef FLIGHT_XSIGN
+#define FLIGHT_XSIGN 1
+#endif
+#ifndef FLIGHT_YSIGN
+#define FLIGHT_YSIGN 1
+#endif
 #define W32(b, o, v) (*(volatile u32 *)((b) + (o)) = (v))
 #define R32F(b, o) (*(volatile u32 *)((b) + (o)))
 
@@ -401,6 +412,20 @@ static inline s32 stick_gc(u32 raw)
     return v;
 }
 
+/* The races (CMainCharacterStateDrive) and the flying levels (FlightInput) steer by tilting the Wii Remote: they read
+ * its accelerometer and take angles with atan2, and never look at the stick or the D-pad.  The KPAD hook keeps the
+ * stick (the D-pad wins when held) per channel; the two tilt hooks run right after those states fetch the
+ * accelerometer and replace it with the matching tilt. */
+static void set_steer(volatile struct ch *c, s32 x, s32 y, u32 w)
+{
+    if (w & WB_LEFT)  x = -ONE;
+    if (w & WB_RIGHT) x = ONE;
+    if (w & WB_UP)    y = ONE;
+    if (w & WB_DOWN)  y = -ONE;
+    c->steer_x = x;
+    c->steer_y = y;
+}
+
 #if defined(HOOK_KPAD)
 /* Called with the sample count KPADRead returned for `chan`; returns the count the game should see. */
 u32 kk_kpad(u32 count, u32 chan, u8 *buf)
@@ -438,6 +463,7 @@ u32 kk_kpad(u32 count, u32 chan, u8 *buf)
             W32(s, K_DPD, R32F(s, K_DPD) & 0x00FFFFFFu);
         }
         c->prev_hold = pw;
+        set_steer(c, fx(R32F(buf, K_FSTK)), fx(R32F(buf, K_FSTK + 4)), pw);
         ST->mode[chan] = 1;
         return count;
     }
@@ -461,12 +487,40 @@ u32 kk_kpad(u32 count, u32 chan, u8 *buf)
             write_motion(s, c, prev);
         }
         c->prev_hold = w;
+        set_steer(c, lx, ly, w);
         ST->mode[chan] = 2;
         return 3;
     }
 
     ST->mode[chan] = 0;
     return count;
+}
+#endif
+
+#if defined(HOOK_DRIVE) || defined(HOOK_FLIGHT)
+#define REV_STRIDE 24820u   /* sizeof(CRevolutionController) */
+
+/* `buf` holds the accelerometer as x, y, z floats.  kind 0 (driving): steering is atan2(z, x), full lock at 60
+ * degrees; kind 1 (flight): roll atan2(x, -z) and pitch atan2(y, -z).  tan 60 = 1.73, so a stick at full tilt (2.0 for
+ * driving, 1.75 for flight) reaches full lock. */
+void kk_tilt(u8 *buf, u32 chan, u32 kind)
+{
+    volatile struct ch *c;
+
+    if (kind)
+        chan = (chan - REV_CONTROLLERS) / REV_STRIDE;
+    if (chan > 3 || !ST->mode[chan])
+        return;
+    c = &ST->ch[chan];
+    if (!kind) {
+        W32(buf, 0, fl(ONE));
+        W32(buf, 4, 0);
+        W32(buf, 8, fl(c->steer_x * DRIVE_SIGN * 2));
+    } else {
+        W32(buf, 0, fl(c->steer_x * FLIGHT_XSIGN * 7 / 4));
+        W32(buf, 4, fl(c->steer_y * FLIGHT_YSIGN * 7 / 4));
+        W32(buf, 8, fl(-ONE));
+    }
 }
 #endif
 

@@ -23,10 +23,13 @@ PLACEHOLDER = 0xD15B1ACE
 HOOKS = (
     ('KPAD', 'AfterKpad', 'after KPADRead: Classic Controller samples become Nunchuk samples, a GameCube pad writes its own'),
     ('PROBE', 'AfterProbe', 'after WPADProbe: a Classic Controller (or a pad) is reported as a Nunchuk'),
+    ('DRIVE', 'AfterDriveAcc', 'races: the stick / D-pad becomes Wii Remote tilt (steering)'),
+    ('FLIGHT', 'AfterFlightAcc', 'flying: the stick / D-pad becomes Wii Remote tilt'),
 )
 
 
 def compile_hook(name, defs):
+    defs = dict(defs, **{k: v for k, v in os.environ.items() if k in ('DRIVE_SIGN', 'FLIGHT_XSIGN', 'FLIGHT_YSIGN')})
     tmp = tempfile.mkdtemp(prefix='kkpad')
     D = ['-D%s=%s' % kv for kv in defs.items()] + ['-DHOOK_' + name]
     cflags = ['-O2', '-fno-unroll-loops', '-mbig-endian', '-msoft-float', '-msdata=none', '-ffreestanding', '-fno-pic',
@@ -58,6 +61,7 @@ def build(region, dol, ref):
         'FN_SIGETTYPE': '0x%08Xu' % a['SIGetType'],
         'FN_OSDISABLE': '0x%08Xu' % a['OSDisableInterrupts'],
         'FN_OSRESTORE': '0x%08Xu' % a['OSRestoreInterrupts'],
+        'REV_CONTROLLERS': '0x%08Xu' % a['RevControllers'],
     }
     ops, cur = [], PAD_BASE
     for name, anchor, note in HOOKS:

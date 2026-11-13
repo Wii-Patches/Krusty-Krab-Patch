@@ -87,7 +87,16 @@ FUNCS = {
     'SITransfer': (0x804104A4, 40),
     'OSDisableInterrupts': (0x80408B24, 6),
     'OSRestoreInterrupts': (0x80408B4C, 6),
+    # the two player states that steer by tilting the Wii Remote
+    'DriveInput': (0x8011F5E4, 40),
+    'FlightInput': (0x8010DB3C, 40),
 }
+
+# the instruction right after each state's GetAccPosition call
+AFTER_DRIVE_ACC = 0x384
+AFTER_FLIGHT_ACC = 0x200
+AFTER_DRIVE_ACC_INSN = 0xC0628310       # lfs f3,-31984(r2)
+AFTER_FLIGHT_ACC_INSN = 0xC0010040      # lfs f0,64(r1)
 
 # offsets inside ReadDevices of the two instructions that get hooked: the store of KPADRead's sample count (`stw
 # r3,164(r21)`, r22 is the channel + 1 by then) and the join point after the WPADProbe call (`lwz r0,152(r30)`)
@@ -111,9 +120,13 @@ def resolve(ref, tgt):
     assert any(w >> 26 == 32 and simm(w) == 4 for w in body), 'SIPOLL shadow not read at busy+4'
     r['AfterKpad'] = r['ReadDevices'] + AFTER_KPAD
     r['AfterProbe'] = r['ReadDevices'] + AFTER_PROBE
-    for name, insn in (('AfterKpad', AFTER_KPAD_INSN), ('AfterProbe', AFTER_PROBE_INSN)):
+    r['AfterDriveAcc'] = r['DriveInput'] + AFTER_DRIVE_ACC
+    r['AfterFlightAcc'] = r['FlightInput'] + AFTER_FLIGHT_ACC
+    r['RevControllers'] = f.pair(0x8010DD0C, 0x805334C0)
+    for name, insn in (('AfterKpad', AFTER_KPAD_INSN), ('AfterProbe', AFTER_PROBE_INSN),
+                       ('AfterDriveAcc', AFTER_DRIVE_ACC_INSN), ('AfterFlightAcc', AFTER_FLIGHT_ACC_INSN)):
         got = words(tgt, r[name], 1)[0]
-        assert got == insn, '%s: %08X holds %08X, expected %08X' % (name, r[name], got, insn)
+        assert mask(got) == mask(insn), '%s: %08X holds %08X, expected %08X' % (name, r[name], got, insn)
     return r
 
 
