@@ -242,7 +242,7 @@ static inline u32 fl(s32 v)
 #define CL_RIGHT 0x8000
 
 /* GameCube pad -> Classic Controller buttons.  Z is ZL, Start is Plus, L + R + Start is HOME, and the C-stick pushed
- * down is Minus (the menus' Back button).  `l` is the second pad word: C-stick x in bits 31..24, y in 23..16. */
+ * down is Minus (the menus' Back button), up is ZR (Wii Remote 2, the races' brake).  `l` is the second pad word: C-stick x in bits 31..24, y in 23..16. */
 static __attribute__((noinline)) u32 gc_to_cc(u32 h, u32 l)
 {
     u32 b = 0;
@@ -260,6 +260,7 @@ static __attribute__((noinline)) u32 gc_to_cc(u32 h, u32 l)
     if (h & 0x00020000u) b |= CL_RIGHT;
     if (h & 0x00010000u) b |= CL_LEFT;
     if (((l >> 16) & 0xFF) < 64) b |= CL_MINUS;
+    if (((l >> 16) & 0xFF) > 192) b |= CL_ZR;     /* C-stick up: Wii Remote 2 (the races' brake) */
     if ((b & (CL_L | CL_R | CL_PLUS)) == (CL_L | CL_R | CL_PLUS))
         b = (b & ~(CL_L | CL_R | CL_PLUS)) | CL_HOME;
     return b;

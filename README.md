@@ -37,7 +37,7 @@ game as exactly that, so every action the game asks for has a button.
 
 | Input | Action |
 | --- | --- |
-| Control stick | Nunchuk stick (move, camera) |
+| Control stick | Nunchuk stick (move, camera); steers in races and flying levels |
 | A | Wii Remote A |
 | B | Wii Remote B |
 | X | Nunchuk C |
@@ -45,16 +45,17 @@ game as exactly that, so every action the game asks for has a button.
 | Y | Swing the Wii Remote |
 | L | Shake the Nunchuk |
 | R | Thrust down (butt bounce) |
-| D-pad | Wii Remote D-pad |
+| D-pad | Wii Remote D-pad; left/right steer at full lock in races |
 | Start | + |
 | C-stick down | − (Back in the menus) |
+| C-stick up | 2 (brake in races) |
 | L + R + Start | HOME |
 
 ### Classic Controller
 
 | Input | Action |
 | --- | --- |
-| Left stick | Nunchuk stick |
+| Left stick | Nunchuk stick; steers in races and flying levels |
 | A / B | Wii Remote A / B |
 | X | Nunchuk C |
 | ZL | Nunchuk Z |
